@@ -61,7 +61,7 @@ class DecisionProposal(BaseContract):
     reason_codes: list[ReasonCode] = Field(min_length=1)
 
     @model_validator(mode="after")
-    def validate_probability_sum(self) -> "DecisionProposal":
+    def validate_probability_sum(self) -> DecisionProposal:
         total = self.p_up + self.p_down + self.p_flat
         if abs(total - 1.0) > 1e-3:
             raise ValueError("DecisionProposal probabilities must sum to 1.0 (+/- 1e-3)")
@@ -113,6 +113,94 @@ class StateEvaluationResult(BaseContract):
     trading_gate: TradingGate
     transitioned: bool
     transition_reason: str
+
+
+class DepthLevel(BaseContract):
+    price: float = Field(gt=0.0)
+    qty: float = Field(ge=0.0)
+
+
+class BookTicker(BaseContract):
+    symbol: str
+    event_time: datetime | None = None
+    bid_price: float = Field(gt=0.0)
+    bid_qty: float = Field(ge=0.0)
+    ask_price: float = Field(gt=0.0)
+    ask_qty: float = Field(ge=0.0)
+
+    @model_validator(mode="after")
+    def validate_spread(self) -> BookTicker:
+        if self.ask_price < self.bid_price:
+            raise ValueError("ask_price must be >= bid_price")
+        return self
+
+
+class DepthSnapshot(BaseContract):
+    symbol: str
+    event_time: datetime | None = None
+    bids: list[DepthLevel] = Field(min_length=1)
+    asks: list[DepthLevel] = Field(min_length=1)
+
+
+class TradeTick(BaseContract):
+    trade_id: int
+    price: float = Field(gt=0.0)
+    qty: float = Field(gt=0.0)
+    is_buyer_maker: bool
+    trade_time: datetime
+
+
+class FundingSnapshot(BaseContract):
+    symbol: str
+    funding_rate: float
+    mark_price: float = Field(gt=0.0)
+    event_time: datetime | None = None
+    next_funding_time: datetime | None = None
+
+
+class MarketDataSnapshot(BaseContract):
+    symbol: str
+    collected_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    book_ticker: BookTicker
+    depth_snapshot: DepthSnapshot
+    trades: list[TradeTick] = Field(min_length=1)
+    funding: FundingSnapshot | None = None
+
+
+class DataSanityInput(BaseContract):
+    market_snapshot: MarketDataSnapshot
+    max_feed_delay_ms: int = Field(default=1500, ge=1, le=60000)
+    outlier_tick_z_threshold: float = Field(default=6.0, ge=1.0, le=25.0)
+    volume_z_threshold: float = Field(default=4.0, ge=1.0, le=25.0)
+    volume_baseline_qty_1m: float | None = Field(default=None, ge=0.0)
+    volume_baseline_std_1m: float | None = Field(default=None, gt=0.0)
+
+
+class DataSanityDiagnostics(BaseContract):
+    feed_delay_ms: float | None
+    feed_delay_anomaly: bool
+    outlier_tick_anomaly: bool
+    volume_anomaly: bool
+    volume_z_score: float | None
+    anomaly_flags: list[str]
+    uncertainty_contrib: float = Field(ge=0.0, le=1.0)
+    data_quality_score: float = Field(ge=0.0, le=1.0)
+
+
+class DataLayerResult(BaseContract):
+    market_snapshot: MarketDataSnapshot
+    diagnostics: DataSanityDiagnostics
+
+
+class MarketDataFetchInput(BaseContract):
+    symbol: str = "BTCUSDT"
+    depth_limit: int = Field(default=100, ge=5, le=1000)
+    trade_limit: int = Field(default=200, ge=20, le=1000)
+    max_feed_delay_ms: int = Field(default=1500, ge=1, le=60000)
+    outlier_tick_z_threshold: float = Field(default=6.0, ge=1.0, le=25.0)
+    volume_z_threshold: float = Field(default=4.0, ge=1.0, le=25.0)
+    volume_baseline_qty_1m: float | None = Field(default=None, ge=0.0)
+    volume_baseline_std_1m: float | None = Field(default=None, gt=0.0)
 
 
 class ExecutionIntent(BaseContract):

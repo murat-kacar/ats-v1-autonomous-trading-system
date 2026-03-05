@@ -77,16 +77,16 @@ Goal:
 - Build end-to-end decision loop with strict safety and realistic cost modeling.
 
 ### 1.1 Data adapters (single venue, BTCUSDT perp)
-- [ ] Implement market data ingest:
+- [x] Implement market data ingest:
   - top-of-book
   - depth snapshots
   - trades
   - funding
-- [ ] Implement data sanity checks:
+- [x] Implement data sanity checks:
   - feed delay
   - outlier ticks
   - volume anomalies
-- [ ] Map anomalies to `uncertainty_score` contribution (no hard block by default).
+- [x] Map anomalies to uncertainty_score contribution (no hard block by default).
 
 ### 1.2 Evidence swarm (advisory only)
 - [ ] Implement initial advisory agents:
