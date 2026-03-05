@@ -267,3 +267,36 @@ class ExecutionReport(BaseContract):
     fill_price: float | None = None
     slippage_bps: float | None = None
     reason_codes: list[ReasonCode] = Field(min_length=1)
+
+class LiquidityGateInput(BaseContract):
+    spread_bps: float = Field(ge=0.0)
+    depth_1pct_usd: float = Field(ge=0.0)
+    expected_impact_bps: float = Field(ge=0.0)
+
+
+class ExecutionSimulationInput(BaseContract):
+    request_id: str
+    intent: ExecutionIntent
+    reference_price: float = Field(gt=0.0)
+    order_size_usd: float = Field(gt=0.0)
+    mode: StateMode = StateMode.NORMAL
+    reduce_only: bool = False
+    liquidity: LiquidityGateInput
+    rolling_1m_vol_pct: float = Field(ge=0.0)
+    one_minute_move_pct: float = Field(ge=0.0)
+    avg_fill_time_seconds: float = Field(default=5.0, gt=0.0)
+    elapsed_unwind_seconds: float = Field(default=0.0, ge=0.0)
+    commission_bps: float = Field(default=2.0, ge=0.0)
+    slippage_bps: float = Field(default=1.0, ge=0.0)
+    funding_bps: float = 0.0
+    impact_bps: float = Field(default=0.0, ge=0.0)
+    requested_kill_switch: bool = False
+
+
+class ExecutionSimulationResult(BaseContract):
+    report: ExecutionReport
+    liquidity_gate_passed: bool
+    circuit_breaker_triggered: bool
+    kill_switch_mode: str | None = None
+    total_cost_bps: float
+    net_fill_price: float | None = None

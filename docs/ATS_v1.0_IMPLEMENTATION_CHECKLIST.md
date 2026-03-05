@@ -129,13 +129,13 @@ Goal:
 - [x] Emit final ALLOW/DENY decision with full reason codes.
 
 ### 1.6 Execution simulator (paper mode)
-- [ ] Implement maker-first simulation.
-- [ ] Implement liquidity gate checks (spread, depth, impact).
-- [ ] Implement circuit breaker inline in execution path.
-- [ ] Implement kill switch:
+- [x] Implement maker-first simulation.
+- [x] Implement liquidity gate checks (spread, depth, impact).
+- [x] Implement circuit breaker inline in execution path.
+- [x] Implement kill switch:
   - controlled unwind
   - timeout -> aggressive exit
-- [ ] Model costs in paper execution:
+- [x] Model costs in paper execution:
   - commission
   - slippage
   - funding
