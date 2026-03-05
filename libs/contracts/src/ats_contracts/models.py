@@ -21,6 +21,20 @@ class TradeAction(StrEnum):
     DENY = "DENY"
 
 
+class StateMode(StrEnum):
+    NORMAL = "NORMAL"
+    CAUTION = "CAUTION"
+    DEFENSE = "DEFENSE"
+    HALT = "HALT"
+
+
+class TradingGate(StrEnum):
+    LIVE = "LIVE"
+    NO_NEW_POSITIONS = "NO_NEW_POSITIONS"
+    SHADOW_ONLY = "SHADOW_ONLY"
+    HALTED = "HALTED"
+
+
 class BaseContract(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -75,6 +89,29 @@ class RiskDecision(BaseContract):
     stop_loss_bps: int = Field(default=0, ge=0)
     time_stop_seconds: int = Field(default=0, ge=0)
     reason_codes: list[ReasonCode] = Field(min_length=1)
+
+
+class StateSnapshot(BaseContract):
+    mode: StateMode = StateMode.NORMAL
+    defense_cooldown_until: datetime | None = None
+    halt_shadow_until: datetime | None = None
+
+
+class StateEvaluationInput(BaseContract):
+    snapshot: StateSnapshot = Field(default_factory=StateSnapshot)
+    event_time: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    drawdown_pct: float = Field(ge=0.0, le=100.0)
+    uncertainty_spike: bool = False
+    critical_correlation: bool = False
+    constitution_breach: bool = False
+    manual_resume: bool = False
+
+
+class StateEvaluationResult(BaseContract):
+    snapshot: StateSnapshot
+    trading_gate: TradingGate
+    transitioned: bool
+    transition_reason: str
 
 
 class ExecutionIntent(BaseContract):

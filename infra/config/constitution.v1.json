@@ -1,0 +1,29 @@
+{
+  "total_capital_usd": 1000.0,
+  "max_drawdown_pct": 50.0,
+  "max_single_position_loss_pct": 10.0,
+  "daily_loss_limit_pct": 5.0,
+  "drawdown_thresholds": {
+    "caution_pct": 20.0,
+    "defense_pct": 35.0,
+    "halt_pct": 50.0
+  },
+  "mode_limits": {
+    "NORMAL": { "max_positions": 5, "max_leverage": 3.0, "risk_contribution_ceiling_pct": 35.0 },
+    "CAUTION": { "max_positions": 3, "max_leverage": 2.0, "risk_contribution_ceiling_pct": 25.0 },
+    "DEFENSE": { "max_positions": 0, "max_leverage": 1.0, "risk_contribution_ceiling_pct": 20.0 },
+    "HALT": { "max_positions": 0, "max_leverage": 0.0, "risk_contribution_ceiling_pct": 0.0 }
+  },
+  "cooldowns": {
+    "post_defense_no_new_positions_hours": 6,
+    "post_halt_shadow_only_hours": 24
+  },
+  "guard_precedence": [
+    "CONSTITUTION_BREACH",
+    "CIRCUIT_BREAKER",
+    "LIQUIDITY_GATE",
+    "NO_TRADE_ZONE",
+    "RISK_LIMIT",
+    "STRATEGY_INTENT"
+  ]
+}
