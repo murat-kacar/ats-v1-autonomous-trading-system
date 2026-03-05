@@ -100,9 +100,9 @@ Goal:
 - [x] Standardize outputs to EvidencePacket schema.
 
 ### 1.3 Evidence compiler
-- [ ] Build reliability-weighted aggregation.
-- [ ] Resolve evidence conflicts and compute source reliability score.
-- [ ] Emit unified evidence packet + quality flags.
+- [x] Build reliability-weighted aggregation.
+- [x] Resolve evidence conflicts and compute source reliability score.
+- [x] Emit unified evidence packet + quality flags.
 
 ### 1.4 Decision core
 - [ ] Produce only:
