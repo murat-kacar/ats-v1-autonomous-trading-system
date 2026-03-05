@@ -165,6 +165,7 @@ source = { editable = "apps/orchestrator" }
 dependencies = [
     { name = "ats-contracts" },
     { name = "ats-event-log" },
+    { name = "ats-risk-rules" },
     { name = "fastapi" },
     { name = "nats-py" },
     { name = "pydantic" },
@@ -176,6 +177,7 @@ dependencies = [
 requires-dist = [
     { name = "ats-contracts", editable = "libs/contracts" },
     { name = "ats-event-log", editable = "libs/event-log" },
+    { name = "ats-risk-rules", editable = "libs/risk-rules" },
     { name = "fastapi", specifier = "==0.135.1" },
     { name = "nats-py", specifier = "==2.14.0" },
     { name = "pydantic", specifier = "==2.12.5" },
@@ -189,6 +191,7 @@ version = "0.1.0"
 source = { editable = "services/risk-adjudicator" }
 dependencies = [
     { name = "ats-contracts" },
+    { name = "ats-event-log" },
     { name = "ats-risk-rules" },
     { name = "fastapi" },
     { name = "pydantic" },
@@ -199,6 +202,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "ats-contracts", editable = "libs/contracts" },
+    { name = "ats-event-log", editable = "libs/event-log" },
     { name = "ats-risk-rules", editable = "libs/risk-rules" },
     { name = "fastapi", specifier = "==0.135.1" },
     { name = "pydantic", specifier = "==2.12.5" },
