@@ -118,15 +118,15 @@ Goal:
   - no valid horizon-window pair -> `NO_TRADE` with `NO_HORIZON_PASSED`
 
 ### 1.5 Risk adjudicator
-- [ ] Implement fractional sizing with uncertainty scaling:
+- [x] Implement fractional sizing with uncertainty scaling:
   - `size = fractional_kelly * (1 - uncertainty_score)`
-- [ ] Enforce hard caps:
+- [x] Enforce hard caps:
   - max single-position loss 10%
   - daily loss 5%
   - mode leverage/concurrency limits
-- [ ] Enforce NTZ rule:
+- [x] Enforce NTZ rule:
   - block only when all three NTZ conditions hold
-- [ ] Emit final `ALLOW/DENY` decision with full reason codes.
+- [x] Emit final ALLOW/DENY decision with full reason codes.
 
 ### 1.6 Execution simulator (paper mode)
 - [ ] Implement maker-first simulation.

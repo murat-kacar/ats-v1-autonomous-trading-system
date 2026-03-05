@@ -225,6 +225,33 @@ class DecisionCoreInput(BaseContract):
     allowed_windows_days: list[int] = Field(default_factory=lambda: [30, 60, 120])
 
 
+class RiskEnvelopeInput(BaseContract):
+    request_id: str
+    decision: DecisionProposal
+    equity_usd: float = Field(gt=0.0)
+    state_mode: StateMode = StateMode.NORMAL
+    uncertainty_score: float = Field(ge=0.0, le=1.0)
+    fractional_kelly: float = Field(default=0.05, ge=0.0, le=1.0)
+    daily_loss_pct: float = Field(default=0.0, ge=0.0, le=100.0)
+    open_positions: int = Field(default=0, ge=0)
+    stop_loss_bps: int = Field(default=100, ge=1)
+    time_stop_seconds: int = Field(default=900, ge=0)
+    circuit_breaker_triggered: bool = False
+    liquidity_gate_passed: bool = True
+    ntz_uncertainty_high: bool = False
+    ntz_correlation_abnormal: bool = False
+    ntz_funding_extreme: bool = False
+    constitution_breach: bool = False
+
+
+class RiskEnvelopeResult(BaseContract):
+    evaluation_input: RiskEvaluationInput
+    ntz_blocked: bool
+    proposed_size_usd: float = Field(ge=0.0)
+    proposed_leverage: float = Field(ge=0.0)
+    risk_limits_passed: bool
+
+
 class ExecutionIntent(BaseContract):
     request_id: str
     symbol: str

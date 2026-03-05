@@ -3,21 +3,29 @@ from __future__ import annotations
 import os
 from dataclasses import asdict
 from pathlib import Path
+from typing import cast
 
 from ats_contracts.models import (
     ReasonCode,
     RiskDecision,
+    RiskEnvelopeInput,
     RiskEvaluationInput,
     StateEvaluationInput,
     StateEvaluationResult,
     TradeAction,
 )
 from ats_event_log.logger import EventLogger
-from ats_risk_rules.constitution import DEFAULT_CONSTITUTION_PATH, load_constitution
+from ats_risk_rules.constitution import (
+    DEFAULT_CONSTITUTION_PATH,
+    ConstitutionConfig,
+    load_constitution,
+)
 from ats_risk_rules.rules import decide_risk_decision
 from ats_risk_rules.state_machine import evaluate_state_transition
 from ats_security import SecretManager, StartupHealthChecker
 from fastapi import FastAPI
+
+from .sizing import build_risk_envelope
 
 DEFAULT_EVENT_LOG_DIR = "/home/deploy/ats/var/log/events"
 DEFAULT_HEARTBEAT_PATH = "/home/deploy/ats/var/run/market_data_heartbeat.json"
@@ -56,7 +64,7 @@ def _build_event_logger(service_name: str) -> EventLogger:
     return EventLogger(base_dir / f"{service_name}.ndjson")
 
 
-def _load_constitution_from_env():
+def _load_constitution_from_env() -> ConstitutionConfig:
     configured_path = Path(os.getenv(CONSTITUTION_PATH_ENV, str(DEFAULT_CONSTITUTION_PATH)))
     return load_constitution(configured_path)
 
@@ -116,9 +124,9 @@ def startup_healthz() -> dict[str, object]:
     }
 
 
-def _stale_kill_decision(input_data: RiskEvaluationInput, reason: str) -> RiskDecision:
+def _stale_kill_decision(request_id: str) -> RiskDecision:
     return RiskDecision(
-        request_id=input_data.request_id,
+        request_id=request_id,
         action=TradeAction.DENY,
         size_usd=0.0,
         leverage=0.0,
@@ -128,28 +136,46 @@ def _stale_kill_decision(input_data: RiskEvaluationInput, reason: str) -> RiskDe
     )
 
 
+def _enforce_stale_guard(
+    request_id: str,
+    request_input_hash: str,
+    event_type: str,
+) -> RiskDecision | None:
+    if not _parse_bool_env(ENFORCE_STALE_ON_REQUEST_ENV, True):
+        return None
+
+    stale_status = startup_health_checker.check_stale_data()
+    if not stale_status.stale:
+        return None
+
+    result = _stale_kill_decision(request_id)
+    event_logger.append(
+        event_type,
+        {
+            "request_id": request_id,
+            "input_hash": request_input_hash,
+            "reason": stale_status.reason,
+            "age_seconds": stale_status.age_seconds,
+            "result": result.model_dump(mode="json"),
+        },
+    )
+    return result
+
+
 @app.post("/v1/risk/adjudicate", response_model=RiskDecision)
 def adjudicate(input_data: RiskEvaluationInput) -> RiskDecision:
     request_payload = input_data.model_dump(mode="json")
     request_event = event_logger.append("risk_adjudicator.requested", request_payload)
 
-    if _parse_bool_env(ENFORCE_STALE_ON_REQUEST_ENV, True):
-        stale_status = startup_health_checker.check_stale_data()
-        if stale_status.stale:
-            result = _stale_kill_decision(input_data, stale_status.reason)
-            event_logger.append(
-                "risk_adjudicator.killed.stale_data",
-                {
-                    "request_id": input_data.request_id,
-                    "input_hash": request_event.input_hash,
-                    "reason": stale_status.reason,
-                    "age_seconds": stale_status.age_seconds,
-                    "result": result.model_dump(mode="json"),
-                },
-            )
-            return result
+    stale_result = _enforce_stale_guard(
+        request_id=input_data.request_id,
+        request_input_hash=request_event.input_hash,
+        event_type="risk_adjudicator.killed.stale_data",
+    )
+    if stale_result is not None:
+        return stale_result
 
-    result = decide_risk_decision(input_data)
+    result = cast(RiskDecision, decide_risk_decision(input_data))
 
     event_logger.append(
         "risk_adjudicator.completed",
@@ -164,12 +190,44 @@ def adjudicate(input_data: RiskEvaluationInput) -> RiskDecision:
     return result
 
 
+@app.post("/v1/risk/evaluate", response_model=RiskDecision)
+def evaluate_risk(input_data: RiskEnvelopeInput) -> RiskDecision:
+    request_payload = input_data.model_dump(mode="json")
+    request_event = event_logger.append("risk_adjudicator.envelope.requested", request_payload)
+
+    stale_result = _enforce_stale_guard(
+        request_id=input_data.request_id,
+        request_input_hash=request_event.input_hash,
+        event_type="risk_adjudicator.envelope.killed.stale_data",
+    )
+    if stale_result is not None:
+        return stale_result
+
+    envelope = build_risk_envelope(input_data, constitution)
+    result = cast(RiskDecision, decide_risk_decision(envelope.evaluation_input))
+
+    event_logger.append(
+        "risk_adjudicator.envelope.completed",
+        {
+            "request_id": input_data.request_id,
+            "input_hash": request_event.input_hash,
+            "evaluation": envelope.evaluation_input.model_dump(mode="json"),
+            "ntz_blocked": envelope.ntz_blocked,
+            "risk_limits_passed": envelope.risk_limits_passed,
+            "result": result.model_dump(mode="json"),
+            "decision_action": result.action.value,
+            "reason_codes": [code.value for code in result.reason_codes],
+        },
+    )
+    return result
+
+
 @app.post("/v1/state/evaluate", response_model=StateEvaluationResult)
 def evaluate_state(input_data: StateEvaluationInput) -> StateEvaluationResult:
     request_payload = input_data.model_dump(mode="json")
     request_event = event_logger.append("risk_adjudicator.state.requested", request_payload)
 
-    result = evaluate_state_transition(input_data, constitution)
+    result = cast(StateEvaluationResult, evaluate_state_transition(input_data, constitution))
 
     event_logger.append(
         "risk_adjudicator.state.completed",
