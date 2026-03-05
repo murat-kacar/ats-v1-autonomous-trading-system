@@ -89,15 +89,15 @@ Goal:
 - [x] Map anomalies to uncertainty_score contribution (no hard block by default).
 
 ### 1.2 Evidence swarm (advisory only)
-- [ ] Implement initial advisory agents:
+- [x] Implement initial advisory agents:
   - trend evidence
   - mean-reversion evidence
   - volatility evidence
   - microstructure evidence
   - funding/basis evidence
   - macro-correlation evidence
-- [ ] Enforce no-trading-authority rule at interface level.
-- [ ] Standardize outputs to EvidencePacket schema.
+- [x] Enforce no-trading-authority rule at interface level.
+- [x] Standardize outputs to EvidencePacket schema.
 
 ### 1.3 Evidence compiler
 - [ ] Build reliability-weighted aggregation.

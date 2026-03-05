@@ -4,12 +4,23 @@ from ats_contracts.models import (
     DataLayerResult,
     DataSanityDiagnostics,
     DataSanityInput,
+    EvidencePacket,
     MarketDataFetchInput,
 )
 from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, ConfigDict
 
 from .binance_um import BinanceUMPublicClient
+from .experts import compile_evidence_packet
 from .sanity import evaluate_data_sanity
+
+
+class EvidenceCompileRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    request_id: str
+    data_layer: DataLayerResult
+
 
 app = FastAPI(title="ats-evidence-swarm", version="0.1.0")
 _client = BinanceUMPublicClient()
@@ -50,3 +61,11 @@ async def fetch_snapshot(input_data: MarketDataFetchInput) -> DataLayerResult:
     )
 
     return DataLayerResult(market_snapshot=snapshot, diagnostics=diagnostics)
+
+
+@app.post("/v1/evidence/compile", response_model=EvidencePacket)
+def compile_evidence(input_data: EvidenceCompileRequest) -> EvidencePacket:
+    return compile_evidence_packet(
+        request_id=input_data.request_id,
+        data_layer=input_data.data_layer,
+    )
