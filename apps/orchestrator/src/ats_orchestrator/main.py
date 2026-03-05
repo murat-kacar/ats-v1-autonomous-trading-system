@@ -29,7 +29,7 @@ def healthz() -> dict[str, str]:
 @app.post("/v1/risk/adjudicate", response_model=RiskDecision)
 def adjudicate_risk(input_data: RiskEvaluationInput) -> RiskDecision:
     request_payload = input_data.model_dump(mode="json")
-    request_hash = event_logger.append("orchestrator.risk.requested", request_payload)
+    request_event = event_logger.append("orchestrator.risk.requested", request_payload)
 
     result = decide_risk_decision(input_data)
 
@@ -37,8 +37,10 @@ def adjudicate_risk(input_data: RiskEvaluationInput) -> RiskDecision:
         "orchestrator.risk.completed",
         {
             "request_id": input_data.request_id,
-            "request_hash": request_hash,
+            "input_hash": request_event.input_hash,
             "result": result.model_dump(mode="json"),
+            "decision_action": result.action.value,
+            "reason_codes": [code.value for code in result.reason_codes],
         },
     )
     return result

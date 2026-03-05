@@ -49,10 +49,10 @@ Goal:
   6. Strategy intent
 
 ### 0.4 Audit and replayability
-- [ ] Implement append-only event log with IDs and timestamps.
-- [ ] Log every deny/allow decision with reason code and inputs hash.
-- [ ] Add deterministic replay tool: same inputs -> same decisions.
-- [ ] Add release manifest hash bundle:
+- [x] Implement append-only event log with IDs and timestamps.
+- [x] Log every deny/allow decision with reason code and inputs hash.
+- [x] Add deterministic replay tool: same inputs -> same decisions.
+- [x] Add release manifest hash bundle:
   - code hash
   - model hash
   - config hash
@@ -65,8 +65,8 @@ Goal:
 
 Exit criteria (Phase 0):
 - [ ] All schemas versioned and tested
-- [ ] State transitions 100% deterministic in tests
-- [ ] Replay test passes for at least 1,000 synthetic events
+- [x] State transitions 100% deterministic in tests
+- [x] Replay test passes for at least 1,000 synthetic events
 - [ ] No order route available unless constitution/risk passes
 
 ---

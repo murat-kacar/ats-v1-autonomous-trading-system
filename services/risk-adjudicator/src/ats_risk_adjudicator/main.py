@@ -43,7 +43,7 @@ def healthz() -> dict[str, str]:
 @app.post("/v1/risk/adjudicate", response_model=RiskDecision)
 def adjudicate(input_data: RiskEvaluationInput) -> RiskDecision:
     request_payload = input_data.model_dump(mode="json")
-    request_hash = event_logger.append("risk_adjudicator.requested", request_payload)
+    request_event = event_logger.append("risk_adjudicator.requested", request_payload)
 
     result = decide_risk_decision(input_data)
 
@@ -51,8 +51,10 @@ def adjudicate(input_data: RiskEvaluationInput) -> RiskDecision:
         "risk_adjudicator.completed",
         {
             "request_id": input_data.request_id,
-            "request_hash": request_hash,
+            "input_hash": request_event.input_hash,
             "result": result.model_dump(mode="json"),
+            "decision_action": result.action.value,
+            "reason_codes": [code.value for code in result.reason_codes],
         },
     )
     return result
@@ -61,14 +63,14 @@ def adjudicate(input_data: RiskEvaluationInput) -> RiskDecision:
 @app.post("/v1/state/evaluate", response_model=StateEvaluationResult)
 def evaluate_state(input_data: StateEvaluationInput) -> StateEvaluationResult:
     request_payload = input_data.model_dump(mode="json")
-    request_hash = event_logger.append("risk_adjudicator.state.requested", request_payload)
+    request_event = event_logger.append("risk_adjudicator.state.requested", request_payload)
 
     result = evaluate_state_transition(input_data, constitution)
 
     event_logger.append(
         "risk_adjudicator.state.completed",
         {
-            "request_hash": request_hash,
+            "input_hash": request_event.input_hash,
             "result": result.model_dump(mode="json"),
         },
     )

@@ -1,3 +1,3 @@
-from .logger import EventLogger
+from .logger import AppendResult, EventLogger
 
-__all__ = ["EventLogger"]
+__all__ = ["AppendResult", "EventLogger"]
