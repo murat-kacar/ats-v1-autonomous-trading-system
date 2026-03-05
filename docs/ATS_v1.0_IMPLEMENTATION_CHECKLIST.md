@@ -142,11 +142,11 @@ Goal:
   - impact
 
 ### 1.7 Monitoring and drift
-- [ ] Real-time PnL and risk-adjusted metrics.
-- [ ] Dual-channel drift detection:
+- [x] Real-time PnL and risk-adjusted metrics.
+- [x] Dual-channel drift detection:
   - PnL drift
   - calibration drift
-- [ ] Automatic demotion to shadow behavior on critical drift.
+- [x] Automatic demotion to shadow behavior on critical drift.
 
 Exit criteria (Phase 1):
 - [ ] 30 consecutive days paper runtime

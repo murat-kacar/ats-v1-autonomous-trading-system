@@ -300,3 +300,27 @@ class ExecutionSimulationResult(BaseContract):
     kill_switch_mode: str | None = None
     total_cost_bps: float
     net_fill_price: float | None = None
+
+class MonitoringEvaluationInput(BaseContract):
+    request_id: str
+    recent_trade_pnls: list[float] = Field(min_length=1)
+    baseline_pnl_mean: float
+    baseline_pnl_std: float = Field(gt=0.0)
+    ci_coverage: float = Field(ge=0.0, le=1.0)
+    brier_score: float = Field(ge=0.0)
+    baseline_brier_score: float = Field(gt=0.0)
+
+
+class MonitoringEvaluationResult(BaseContract):
+    request_id: str
+    pnl_drift: bool
+    calibration_drift: bool
+    dual_channel_drift: bool
+    recommended_action: str
+    pnl_z_score: float = Field(ge=0.0)
+    ci_coverage: float = Field(ge=0.0, le=1.0)
+    brier_ratio: float = Field(ge=0.0)
+    sharpe: float
+    sortino: float
+    calmar: float
+    hit_rate: float = Field(ge=0.0, le=1.0)
