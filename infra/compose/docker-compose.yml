@@ -1,0 +1,98 @@
+name: ats-v1
+
+services:
+  postgres:
+    image: postgres:18.3
+    container_name: ats-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:8.6.1
+    container_name: ats-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  nats:
+    image: nats:2.12.4
+    container_name: ats-nats
+    restart: unless-stopped
+    command: ["-js", "-m", "8222"]
+    volumes:
+      - nats_data:/data
+    ports:
+      - "127.0.0.1:4222:4222"
+      - "127.0.0.1:8222:8222"
+    healthcheck:
+      test: [ CMD, /nats-server, -v]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  prometheus:
+    image: prom/prometheus:v3.10.0
+    container_name: ats-prometheus
+    restart: unless-stopped
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "127.0.0.1:9090:9090"
+
+  loki:
+    image: grafana/loki:3.6.7
+    container_name: ats-loki
+    restart: unless-stopped
+    command: ["-config.file=/etc/loki/local-config.yaml"]
+    volumes:
+      - ./loki/config.yml:/etc/loki/local-config.yaml:ro
+      - loki_data:/loki
+    ports:
+      - "127.0.0.1:3100:3100"
+
+  grafana:
+    image: grafana/grafana:12.4.0
+    container_name: ats-grafana
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+      - loki
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+    volumes:
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "127.0.0.1:3000:3000"
+
+volumes:
+  postgres_data:
+  redis_data:
+  nats_data:
+  prometheus_data:
+  loki_data:
+  grafana_data:

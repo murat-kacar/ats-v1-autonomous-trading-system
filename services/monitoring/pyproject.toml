@@ -1,0 +1,15 @@
+[project]
+name = "ats-monitoring"
+version = "0.1.0"
+requires-python = ">=3.14,<3.15"
+dependencies = [
+  "ats-contracts",
+  "fastapi==0.135.1",
+  "pydantic==2.12.5",
+  "structlog==25.5.0",
+  "uvicorn==0.41.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
