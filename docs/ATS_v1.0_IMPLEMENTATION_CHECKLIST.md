@@ -59,9 +59,9 @@ Goal:
   - dataset hash (if applicable)
 
 ### 0.5 Secrets and operational safety
-- [ ] Integrate secrets manager for API keys.
-- [ ] Add key rotation runbook and emergency revoke procedure.
-- [ ] Implement startup health checks and stale-data kill condition.
+- [x] Integrate secrets manager for API keys.
+- [x] Add key rotation runbook and emergency revoke procedure.
+- [x] Implement startup health checks and stale-data kill condition.
 
 Exit criteria (Phase 0):
 - [ ] All schemas versioned and tested

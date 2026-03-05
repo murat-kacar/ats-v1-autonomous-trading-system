@@ -17,12 +17,14 @@ members = [
   "libs/contracts",
   "libs/risk-rules",
   "libs/event-log",
+  "libs/security",
 ]
 
 [tool.uv.sources]
 ats-contracts = { workspace = true }
 ats-risk-rules = { workspace = true }
 ats-event-log = { workspace = true }
+ats-security = { workspace = true }
 
 [dependency-groups]
 dev = [

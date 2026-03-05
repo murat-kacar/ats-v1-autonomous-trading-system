@@ -9,7 +9,8 @@ This repository is the bootstrap monorepo for ATS v1.0.
 - `libs/contracts`: canonical message schemas
 - `libs/risk-rules`: deterministic risk/state-machine helpers
 - `libs/event-log`: append-only event logging helpers and manifest hashing
-- `tools/*`: replay and manifest CLI utilities
+- `libs/security`: secret manager and startup/stale-data health guards
+- `tools/*`: replay, manifest and heartbeat utilities
 
 ## Quick Start
 
@@ -34,6 +35,20 @@ This repository is the bootstrap monorepo for ATS v1.0.
   --dataset-dir /home/deploy/ats/data/datasets \
   --output /home/deploy/ats/artifacts/releases/release-manifest.v1.json
 ```
+
+## Phase 0.5 Utilities
+
+```bash
+# Write fresh market data heartbeat (required by stale-data guard)
+~/.local/bin/uv run --all-packages python tools/write_market_heartbeat.py \
+  --output /home/deploy/ats/var/run/market_data_heartbeat.json
+```
+
+## Runbooks
+
+- `docs/RUNBOOK_API_KEY_ROTATION.md`
+- `docs/RUNBOOK_EMERGENCY_REVOKE.md`
+- `infra/config/runtime.env.example`
 
 ## Important
 

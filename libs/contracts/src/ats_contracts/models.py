@@ -14,6 +14,7 @@ class ReasonCode(StrEnum):
     LIQUIDITY_GATE = "LIQUIDITY_GATE"
     NO_TRADE_ZONE = "NO_TRADE_ZONE"
     RISK_LIMIT = "RISK_LIMIT"
+    STALE_DATA = "STALE_DATA"
 
 
 class TradeAction(StrEnum):
