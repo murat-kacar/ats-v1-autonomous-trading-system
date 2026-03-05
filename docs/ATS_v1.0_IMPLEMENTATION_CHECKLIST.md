@@ -105,16 +105,16 @@ Goal:
 - [x] Emit unified evidence packet + quality flags.
 
 ### 1.4 Decision core
-- [ ] Produce only:
+- [x] Produce only:
   - `p_up`, `p_down`, `p_flat`
   - `edge_bps_after_cost`
   - `confidence`
-- [ ] Implement adaptive horizon selector:
+- [x] Implement adaptive horizon selector:
   - candidate horizons: 5m, 15m, 1h, 4h
   - candidate windows: 30d, 60d, 120d
   - min sample: 150 trades/window
   - validation: walk-forward + embargo
-- [ ] Enforce hard rule:
+- [x] Enforce hard rule:
   - no valid horizon-window pair -> `NO_TRADE` with `NO_HORIZON_PASSED`
 
 ### 1.5 Risk adjudicator

@@ -203,6 +203,28 @@ class MarketDataFetchInput(BaseContract):
     volume_baseline_std_1m: float | None = Field(default=None, gt=0.0)
 
 
+class HorizonWindowCandidate(BaseContract):
+    horizon: str
+    window_days: int = Field(ge=1)
+    sample_size: int = Field(ge=0)
+    walk_forward_score: float
+    embargo_passed: bool = True
+    gross_edge_bps: float
+    fee_bps: float = Field(default=0.0, ge=0.0)
+    slippage_bps: float = Field(default=0.0, ge=0.0)
+    funding_bps: float = Field(default=0.0, ge=0.0)
+    impact_bps: float = Field(default=0.0, ge=0.0)
+
+
+class DecisionCoreInput(BaseContract):
+    request_id: str
+    evidence: EvidencePacket
+    candidates: list[HorizonWindowCandidate] = Field(default_factory=list)
+    min_sample_size: int = Field(default=150, ge=1)
+    allowed_horizons: list[str] = Field(default_factory=lambda: ["5m", "15m", "1h", "4h"])
+    allowed_windows_days: list[int] = Field(default_factory=lambda: [30, 60, 120])
+
+
 class ExecutionIntent(BaseContract):
     request_id: str
     symbol: str
