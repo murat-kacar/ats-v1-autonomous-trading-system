@@ -4,6 +4,16 @@ Status: Locked baseline for implementation start
 
 This document is the implementation baseline for v1.0. Any change must be versioned and justified.
 
+## 0) Mission Lock
+
+Mission statement:
+- Build a multi-layer, expert-agent-supported trading intelligence system that synthesizes historically established and practically validated financial, economic, operational, strategic, academic, scientific, and traditional methods to estimate BTCUSDT price behavior and produce auditable BUY/SELL/HOLD decisions.
+
+Execution interpretation (v1.0):
+- "Broad expert coverage" means many specialist advisory agents, not unlimited authority.
+- Specialist agents communicate through strict schemas and emit evidence only.
+- Forecast authority remains in Decision Core; exposure authority remains in Risk Adjudicator.
+
 ## 1) Decision Filter (Top Priority)
 
 Primary objective:
@@ -68,7 +78,7 @@ Exit cooldowns:
 
 ### 5.1 Evidence Swarm (many agents, no trading authority)
 
-Swarm agents can include: market microstructure, macro, funding/basis, on-chain, sentiment/news, broker-style execution diagnostics, math/statistics validators.
+Swarm agents can include: market microstructure, macro, funding/basis, on-chain, sentiment/news, economic-journalism narrative analysis, broker-style execution diagnostics, econometrics, and math/statistics validators.
 
 Hard rule:
 - Swarm agents do not predict final direction and do not place orders.

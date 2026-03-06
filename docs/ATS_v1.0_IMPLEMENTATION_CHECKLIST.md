@@ -89,6 +89,14 @@ Goal:
 - [x] Map anomalies to uncertainty_score contribution (no hard block by default).
 
 ### 1.2 Evidence swarm (advisory only)
+- [ ] Define expert taxonomy for v1.0 advisory swarm:
+  - market microstructure
+  - macro and cross-asset
+  - funding/basis and derivatives structure
+  - on-chain flow and reserves
+  - sentiment/news and economic-journalism narrative
+  - broker-style execution diagnostics
+  - econometrics and mathematical validation
 - [x] Implement initial advisory agents:
   - trend evidence
   - mean-reversion evidence
@@ -97,7 +105,9 @@ Goal:
   - funding/basis evidence
   - macro-correlation evidence
 - [x] Enforce no-trading-authority rule at interface level.
+- [ ] Enforce no-forecast-authority rule at interface level (agents provide stats/evidence only).
 - [x] Standardize outputs to EvidencePacket schema.
+- [ ] Add per-agent reliability scoring and timeout-to-neutral fallback.
 
 ### 1.3 Evidence compiler
 - [x] Build reliability-weighted aggregation.
