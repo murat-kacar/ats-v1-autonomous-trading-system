@@ -9,7 +9,18 @@ This document is the implementation baseline for v1.0. Any change must be versio
 Mission statement:
 - Build a multi-layer, expert-agent-supported trading intelligence system that synthesizes historically established and practically validated financial, economic, operational, strategic, academic, scientific, and traditional methods to estimate BTCUSDT price behavior and produce auditable BUY/SELL/HOLD decisions.
 
+Canonical goal set (authoritative for all v1.0 docs and code):
+1. BTCUSDT-first scope: v1.0 runs single instrument and single venue.
+2. Runtime is multi-layer and expert-agent-supported with broad specialist coverage, but always bounded by deterministic interfaces.
+3. Specialist agents are advisory-only: they emit statistics/evidence/risk flags/uncertainty and never place orders.
+4. Final forecast authority belongs only to Decision Core.
+5. Final exposure and open/close authority belongs only to Risk Adjudicator.
+6. Primary business objective is profitability; optimize post-cost return speed only after survival constraints are satisfied.
+7. If edge is weak or absent, minimize loss and preserve capital through deterministic guards.
+8. Avoid overengineering: keep the architecture as simple as possible while preserving safety, auditability, and solo maintainability.
+
 Execution interpretation (v1.0):
+- If any file conflicts with this section, this section is the source of truth.
 - "Broad expert coverage" means many specialist advisory agents, not unlimited authority.
 - Specialist agents communicate through strict schemas and emit evidence only.
 - Forecast authority remains in Decision Core; exposure authority remains in Risk Adjudicator.

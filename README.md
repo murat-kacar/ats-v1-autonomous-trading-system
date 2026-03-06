@@ -2,6 +2,12 @@
 
 This repository is the bootstrap monorepo for ATS v1.0.
 
+## Canonical Goals (Memory Lock)
+
+- Single source of truth: `docs/ATS_v1.0_SCOPE_OPERATING_RULES.md` (Sections 0 and 1).
+- If any goal text in other files conflicts with Scope, Scope wins.
+- Build and review decisions must trace back to canonical goals before implementation.
+
 ## Layout
 
 - `apps/orchestrator`: coordination entrypoint

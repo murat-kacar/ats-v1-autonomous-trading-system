@@ -5,6 +5,11 @@ Reference: `ATS_v1.0_SCOPE_OPERATING_RULES.md`
 
 Use this as the single build checklist. Do not start a phase unless previous phase exit criteria are met.
 
+Goal authority:
+- Canonical goals are locked in `ATS_v1.0_SCOPE_OPERATING_RULES.md` (Sections 0 and 1).
+- This checklist tracks execution only; it does not redefine goals.
+- If any checklist item conflicts with canonical goals, update this checklist before implementation.
+
 ## Phase 0 - Foundation and Safety Rails
 
 Goal:
