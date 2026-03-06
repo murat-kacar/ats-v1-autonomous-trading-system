@@ -169,7 +169,12 @@ version = "0.1.0"
 source = { editable = "apps/orchestrator" }
 dependencies = [
     { name = "ats-contracts" },
+    { name = "ats-decision-core" },
     { name = "ats-event-log" },
+    { name = "ats-evidence-swarm" },
+    { name = "ats-execution-kernel" },
+    { name = "ats-monitoring" },
+    { name = "ats-risk-adjudicator" },
     { name = "ats-risk-rules" },
     { name = "ats-security" },
     { name = "fastapi" },
@@ -182,7 +187,12 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "ats-contracts", editable = "libs/contracts" },
+    { name = "ats-decision-core", editable = "services/decision-core" },
     { name = "ats-event-log", editable = "libs/event-log" },
+    { name = "ats-evidence-swarm", editable = "services/evidence-swarm" },
+    { name = "ats-execution-kernel", editable = "services/execution-kernel" },
+    { name = "ats-monitoring", editable = "services/monitoring" },
+    { name = "ats-risk-adjudicator", editable = "services/risk-adjudicator" },
     { name = "ats-risk-rules", editable = "libs/risk-rules" },
     { name = "ats-security", editable = "libs/security" },
     { name = "fastapi", specifier = "==0.135.1" },

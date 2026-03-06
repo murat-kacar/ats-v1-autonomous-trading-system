@@ -22,8 +22,13 @@ members = [
 
 [tool.uv.sources]
 ats-contracts = { workspace = true }
-ats-risk-rules = { workspace = true }
+ats-decision-core = { workspace = true }
+ats-evidence-swarm = { workspace = true }
 ats-event-log = { workspace = true }
+ats-execution-kernel = { workspace = true }
+ats-monitoring = { workspace = true }
+ats-risk-adjudicator = { workspace = true }
+ats-risk-rules = { workspace = true }
 ats-security = { workspace = true }
 
 [dependency-groups]
