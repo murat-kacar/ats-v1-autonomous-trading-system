@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import math
 import statistics
+from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor, TimeoutError
 from dataclasses import dataclass
 from itertools import pairwise
 
@@ -17,7 +19,14 @@ _FORBIDDEN_ADVISORY_TERMS = {
     "leverage",
     "buy",
     "sell",
+    "forecast",
+    "prediction",
+    "p_up",
+    "p_down",
+    "p_flat",
 }
+
+_DEFAULT_EXPERT_TIMEOUT_SECONDS = 0.02
 
 
 @dataclass(frozen=True)
@@ -32,6 +41,40 @@ class ExpertSignal:
 
 def _clamp(value: float, low: float, high: float) -> float:
     return max(low, min(high, value))
+
+
+def _neutral_signal(name: str, reason: str) -> ExpertSignal:
+    return ExpertSignal(
+        name=name,
+        direction_score=0.0,
+        confidence=0.0,
+        features={"neutral_fallback": 1.0},
+        risk_flags=[f"{name.upper()}_{reason}_FALLBACK"],
+        reliability=0.15,
+    )
+
+
+def run_expert_with_fallback(
+    name: str,
+    fn: Callable[[MarketDataSnapshot], ExpertSignal],
+    snapshot: MarketDataSnapshot,
+    timeout_seconds: float = _DEFAULT_EXPERT_TIMEOUT_SECONDS,
+) -> ExpertSignal:
+    if timeout_seconds <= 0.0:
+        timeout_seconds = _DEFAULT_EXPERT_TIMEOUT_SECONDS
+
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        future = executor.submit(fn, snapshot)
+        try:
+            signal = future.result(timeout=timeout_seconds)
+        except TimeoutError:
+            return _neutral_signal(name, "TIMEOUT")
+        except Exception:
+            return _neutral_signal(name, "ERROR")
+
+    if signal.name != name:
+        return _neutral_signal(name, "NAME_MISMATCH")
+    return signal
 
 
 def _pct_change(start: float, end: float) -> float:
@@ -263,13 +306,18 @@ def assert_advisory_only(features: dict[str, float], risk_flags: list[str]) -> N
 
 
 def compile_evidence_packet(request_id: str, data_layer: DataLayerResult) -> EvidencePacket:
+    expert_specs: list[tuple[str, Callable[[MarketDataSnapshot], ExpertSignal]]] = [
+        ("trend", _trend_signal),
+        ("mean_reversion", _mean_reversion_signal),
+        ("volatility", _volatility_signal),
+        ("microstructure", _microstructure_signal),
+        ("funding_basis", _funding_basis_signal),
+        ("macro_correlation", _macro_correlation_signal),
+    ]
+
     signals = [
-        _trend_signal(data_layer.market_snapshot),
-        _mean_reversion_signal(data_layer.market_snapshot),
-        _volatility_signal(data_layer.market_snapshot),
-        _microstructure_signal(data_layer.market_snapshot),
-        _funding_basis_signal(data_layer.market_snapshot),
-        _macro_correlation_signal(data_layer.market_snapshot),
+        run_expert_with_fallback(name, fn, data_layer.market_snapshot)
+        for name, fn in expert_specs
     ]
 
     feature_values: dict[str, float] = {}
@@ -288,7 +336,8 @@ def compile_evidence_packet(request_id: str, data_layer: DataLayerResult) -> Evi
 
         feature_values.update(enriched_features)
         risk_flags.update(signal.risk_flags)
-        source_reliability[signal.name] = _clamp(signal.reliability, 0.0, 1.0)
+        quality_multiplier = 0.65 + (0.35 * data_layer.diagnostics.data_quality_score)
+        source_reliability[signal.name] = _clamp(signal.reliability * quality_multiplier, 0.0, 1.0)
         direction_scores.append(signal.direction_score)
 
     disagreement = statistics.pstdev(direction_scores) if len(direction_scores) >= 2 else 0.0

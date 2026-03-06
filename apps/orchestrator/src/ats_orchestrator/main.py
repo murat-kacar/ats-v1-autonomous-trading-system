@@ -3,11 +3,9 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from ats_contracts.models import RiskDecision, RiskEvaluationInput
 from ats_event_log.logger import EventLogger
 from ats_evidence_swarm.binance_um import BinanceUMPublicClient
 from ats_risk_rules.constitution import DEFAULT_CONSTITUTION_PATH, load_constitution
-from ats_risk_rules.rules import decide_risk_decision
 from ats_security import SecretManager
 from fastapi import FastAPI
 
@@ -73,26 +71,6 @@ def startup_healthz() -> dict[str, object]:
         "report": report,
         "secret_snapshot": secret_manager.masked_snapshot(),
     }
-
-
-@app.post("/v1/risk/adjudicate", response_model=RiskDecision)
-def adjudicate_risk(input_data: RiskEvaluationInput) -> RiskDecision:
-    request_payload = input_data.model_dump(mode="json")
-    request_event = event_logger.append("orchestrator.risk.requested", request_payload)
-
-    result = decide_risk_decision(input_data)
-
-    event_logger.append(
-        "orchestrator.risk.completed",
-        {
-            "request_id": input_data.request_id,
-            "input_hash": request_event.input_hash,
-            "result": result.model_dump(mode="json"),
-            "decision_action": result.action.value,
-            "reason_codes": [code.value for code in result.reason_codes],
-        },
-    )
-    return result
 
 
 @app.post("/v1/paper/run-once", response_model=PaperRunResult)

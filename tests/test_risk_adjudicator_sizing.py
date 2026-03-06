@@ -102,3 +102,55 @@ def test_ntz_blocks_only_when_all_three_conditions_true() -> None:
     assert full.ntz_blocked is True
     assert full_decision.action == TradeAction.DENY
     assert full_decision.reason_codes == [ReasonCode.NO_TRADE_ZONE]
+
+
+def test_reduce_only_unwind_allowed_in_defense_mode() -> None:
+    envelope = build_risk_envelope(
+        RiskEnvelopeInput(
+            request_id="r-reduce-defense",
+            decision=_decision().model_copy(
+                update={"reason_codes": [ReasonCode.NO_HORIZON_PASSED], "edge_bps_after_cost": -0.5}
+            ),
+            equity_usd=1_000.0,
+            state_mode=StateMode.DEFENSE,
+            uncertainty_score=0.40,
+            fractional_kelly=0.05,
+            daily_loss_pct=7.0,
+            open_positions=1,
+            stop_loss_bps=200,
+            ntz_uncertainty_high=True,
+            ntz_correlation_abnormal=True,
+            ntz_funding_extreme=True,
+            reduce_only=True,
+        ),
+        _constitution(),
+    )
+
+    decision = decide_risk_decision(envelope.evaluation_input)
+
+    assert envelope.ntz_blocked is False
+    assert envelope.risk_limits_passed is True
+    assert decision.action == TradeAction.ALLOW
+
+
+def test_reduce_only_unwind_allowed_in_halt_mode() -> None:
+    envelope = build_risk_envelope(
+        RiskEnvelopeInput(
+            request_id="r-reduce-halt",
+            decision=_decision(),
+            equity_usd=1_000.0,
+            state_mode=StateMode.HALT,
+            uncertainty_score=0.50,
+            fractional_kelly=0.05,
+            daily_loss_pct=10.0,
+            open_positions=2,
+            stop_loss_bps=200,
+            reduce_only=True,
+        ),
+        _constitution(),
+    )
+
+    decision = decide_risk_decision(envelope.evaluation_input)
+
+    assert envelope.risk_limits_passed is True
+    assert decision.action == TradeAction.ALLOW

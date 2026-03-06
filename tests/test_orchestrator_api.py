@@ -8,6 +8,7 @@ from ats_contracts.models import (
     DepthLevel,
     DepthSnapshot,
     HorizonWindowCandidate,
+    LiquidityGateInput,
     MarketDataSnapshot,
     TradeTick,
 )
@@ -94,11 +95,11 @@ def test_orchestrator_paper_run_once_endpoint() -> None:
             )
         ],
         execution=PaperExecutionConfig(
-            liquidity={
-                "spread_bps": 4.0,
-                "depth_1pct_usd": 80_000.0,
-                "expected_impact_bps": 4.0,
-            }
+            liquidity=LiquidityGateInput(
+                spread_bps=4.0,
+                depth_1pct_usd=80_000.0,
+                expected_impact_bps=4.0,
+            ),
         ),
     ).model_dump(mode="json")
 
@@ -107,6 +108,10 @@ def test_orchestrator_paper_run_once_endpoint() -> None:
     assert response.status_code == 200
     body = response.json()
     assert body["request_id"] == "orch-api-1"
-    assert body["decision"]["reason_codes"] in [["OK"], ["NO_HORIZON_PASSED"]]
+    assert body["decision"]["reason_codes"] in [
+        ["OK"],
+        ["NO_HORIZON_PASSED"],
+        ["NO_DIRECTION_SIGNAL"],
+    ]
     assert body["risk_decision"]["reason_codes"]
     assert "monitoring_result" in body

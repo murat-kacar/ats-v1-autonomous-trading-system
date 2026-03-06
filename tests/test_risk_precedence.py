@@ -85,3 +85,51 @@ def test_no_horizon_blocks_when_no_higher_guard() -> None:
 
     assert result.action == TradeAction.DENY
     assert result.reason_codes == [ReasonCode.NO_HORIZON_PASSED]
+
+
+def test_reduce_only_ignores_strategy_block() -> None:
+    decision = _base_decision().model_copy(
+        update={
+            "edge_bps_after_cost": -1.0,
+            "reason_codes": [ReasonCode.NO_HORIZON_PASSED],
+        }
+    )
+
+    result = decide_risk_decision(
+        RiskEvaluationInput(
+            request_id="r-reduce-only",
+            decision=decision,
+            proposed_size_usd=80.0,
+            proposed_leverage=1.0,
+            risk_limits_passed=True,
+            reduce_only=True,
+        )
+    )
+
+    assert result.action == TradeAction.ALLOW
+    assert result.reason_codes == [ReasonCode.OK]
+
+
+def test_custom_guard_precedence_is_applied() -> None:
+    decision = _base_decision()
+    result = decide_risk_decision(
+        RiskEvaluationInput(
+            request_id="r-custom-precedence",
+            decision=decision,
+            proposed_size_usd=120.0,
+            proposed_leverage=1.2,
+            circuit_breaker_triggered=True,
+            liquidity_gate_passed=False,
+        ),
+        guard_precedence=[
+            "LIQUIDITY_GATE",
+            "CIRCUIT_BREAKER",
+            "CONSTITUTION_BREACH",
+            "NO_TRADE_ZONE",
+            "RISK_LIMIT",
+            "STRATEGY_INTENT",
+        ],
+    )
+
+    assert result.action == TradeAction.DENY
+    assert result.reason_codes == [ReasonCode.LIQUIDITY_GATE]

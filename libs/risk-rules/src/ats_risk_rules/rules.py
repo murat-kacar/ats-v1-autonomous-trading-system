@@ -14,11 +14,54 @@ class GuardTrigger(IntEnum):
     CONSTITUTION_BREACH = 1
 
 
-def select_top_guard(active_guards: list[GuardTrigger]) -> GuardTrigger | None:
+_DEFAULT_GUARD_PRECEDENCE = [
+    "CONSTITUTION_BREACH",
+    "CIRCUIT_BREAKER",
+    "LIQUIDITY_GATE",
+    "NO_TRADE_ZONE",
+    "RISK_LIMIT",
+    "STRATEGY_INTENT",
+]
+
+_GUARD_BY_NAME = {
+    "CONSTITUTION_BREACH": GuardTrigger.CONSTITUTION_BREACH,
+    "CIRCUIT_BREAKER": GuardTrigger.CIRCUIT_BREAKER,
+    "LIQUIDITY_GATE": GuardTrigger.LIQUIDITY_GATE,
+    "NO_TRADE_ZONE": GuardTrigger.NO_TRADE_ZONE,
+    "RISK_LIMIT": GuardTrigger.RISK_LIMIT,
+    "STRATEGY_INTENT": GuardTrigger.STRATEGY_INTENT,
+}
+
+
+def _guard_ranks(guard_precedence: list[str] | None) -> dict[GuardTrigger, int]:
+    ranks: dict[GuardTrigger, int] = {}
+    raw = guard_precedence or _DEFAULT_GUARD_PRECEDENCE
+
+    ordered = [name.strip().upper() for name in raw if name.strip()]
+    for index, name in enumerate(ordered):
+        trigger = _GUARD_BY_NAME.get(name)
+        if trigger is not None and trigger not in ranks:
+            ranks[trigger] = index
+
+    fallback_rank = len(ranks)
+    for name in _DEFAULT_GUARD_PRECEDENCE:
+        trigger = _GUARD_BY_NAME[name]
+        if trigger not in ranks:
+            ranks[trigger] = fallback_rank
+            fallback_rank += 1
+
+    return ranks
+
+
+def select_top_guard(
+    active_guards: list[GuardTrigger],
+    guard_precedence: list[str] | None = None,
+) -> GuardTrigger | None:
     """Return highest-priority guard according to immutable precedence."""
     if not active_guards:
         return None
-    return min(active_guards)
+    ranks = _guard_ranks(guard_precedence)
+    return min(active_guards, key=lambda guard: ranks.get(guard, 9_999))
 
 
 def _strategy_block_reason(input_data: RiskEvaluationInput) -> ReasonCode:
@@ -31,6 +74,8 @@ def _strategy_block_reason(input_data: RiskEvaluationInput) -> ReasonCode:
 
 
 def _has_strategy_block(input_data: RiskEvaluationInput) -> bool:
+    if input_data.reduce_only:
+        return False
     return _strategy_block_reason(input_data) != ReasonCode.OK
 
 
@@ -71,9 +116,12 @@ def _reason_for_guard(input_data: RiskEvaluationInput, guard: GuardTrigger) -> R
     return _strategy_block_reason(input_data)
 
 
-def decide_risk_decision(input_data: RiskEvaluationInput) -> RiskDecision:
+def decide_risk_decision(
+    input_data: RiskEvaluationInput,
+    guard_precedence: list[str] | None = None,
+) -> RiskDecision:
     active_guards = _collect_active_guards(input_data)
-    top_guard = select_top_guard(active_guards)
+    top_guard = select_top_guard(active_guards, guard_precedence=guard_precedence)
 
     if top_guard is not None:
         reason = _reason_for_guard(input_data, top_guard)

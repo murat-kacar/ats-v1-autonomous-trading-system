@@ -9,6 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 class ReasonCode(StrEnum):
     OK = "OK"
     NO_HORIZON_PASSED = "NO_HORIZON_PASSED"
+    NO_DIRECTION_SIGNAL = "NO_DIRECTION_SIGNAL"
     CONSTITUTION_BREACH = "CONSTITUTION_BREACH"
     CIRCUIT_BREAKER = "CIRCUIT_BREAKER"
     LIQUIDITY_GATE = "LIQUIDITY_GATE"
@@ -80,6 +81,7 @@ class RiskEvaluationInput(BaseContract):
     liquidity_gate_passed: bool = True
     ntz_blocked: bool = False
     risk_limits_passed: bool = True
+    reduce_only: bool = False
 
 
 class RiskDecision(BaseContract):
@@ -214,6 +216,8 @@ class HorizonWindowCandidate(BaseContract):
     slippage_bps: float = Field(default=0.0, ge=0.0)
     funding_bps: float = Field(default=0.0, ge=0.0)
     impact_bps: float = Field(default=0.0, ge=0.0)
+    calibration_coverage: float = Field(default=0.75, ge=0.0, le=1.0)
+    brier_ratio: float = Field(default=1.0, ge=0.0)
 
 
 class DecisionCoreInput(BaseContract):
@@ -223,6 +227,8 @@ class DecisionCoreInput(BaseContract):
     min_sample_size: int = Field(default=150, ge=1)
     allowed_horizons: list[str] = Field(default_factory=lambda: ["5m", "15m", "1h", "4h"])
     allowed_windows_days: list[int] = Field(default_factory=lambda: [30, 60, 120])
+    min_calibration_coverage: float = Field(default=0.65, ge=0.0, le=1.0)
+    max_brier_ratio: float = Field(default=1.5, ge=0.0)
 
 
 class RiskEnvelopeInput(BaseContract):
@@ -242,6 +248,7 @@ class RiskEnvelopeInput(BaseContract):
     ntz_correlation_abnormal: bool = False
     ntz_funding_extreme: bool = False
     constitution_breach: bool = False
+    reduce_only: bool = False
 
 
 class RiskEnvelopeResult(BaseContract):

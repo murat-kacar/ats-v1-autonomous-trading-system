@@ -145,3 +145,31 @@ def test_build_decision_outputs_probabilities_and_positive_edge() -> None:
     assert 0.0 <= proposal.p_flat <= 1.0
     assert round(proposal.p_up + proposal.p_down + proposal.p_flat, 6) == 1.0
     assert 0.0 <= proposal.confidence <= 1.0
+
+
+def test_calibration_gate_filters_out_candidate() -> None:
+    input_data = DecisionCoreInput(
+        request_id="req-4",
+        evidence=_evidence_packet(),
+        min_calibration_coverage=0.65,
+        max_brier_ratio=1.5,
+        candidates=[
+            HorizonWindowCandidate(
+                horizon="15m",
+                window_days=60,
+                sample_size=300,
+                walk_forward_score=1.1,
+                embargo_passed=True,
+                gross_edge_bps=14.0,
+                fee_bps=2.0,
+                slippage_bps=1.0,
+                funding_bps=0.4,
+                impact_bps=0.8,
+                calibration_coverage=0.50,
+                brier_ratio=1.1,
+            )
+        ],
+    )
+
+    proposal = build_decision_proposal(input_data)
+    assert proposal.reason_codes == [ReasonCode.NO_HORIZON_PASSED]

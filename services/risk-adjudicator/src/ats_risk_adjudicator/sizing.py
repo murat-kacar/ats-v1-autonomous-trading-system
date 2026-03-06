@@ -23,6 +23,7 @@ def build_risk_envelope(
         input_data.ntz_uncertainty_high
         and input_data.ntz_correlation_abnormal
         and input_data.ntz_funding_extreme
+        and not input_data.reduce_only
     )
 
     uncertainty_scale = _clamp(1.0 - input_data.uncertainty_score, 0.0, 1.0)
@@ -36,6 +37,8 @@ def build_risk_envelope(
     max_size_by_loss_usd = max_single_loss_usd / stop_loss_fraction
 
     proposed_size_usd = min(base_size_usd, max_size_by_loss_usd)
+    if input_data.reduce_only and proposed_size_usd <= 0.0:
+        proposed_size_usd = min(input_data.equity_usd, max_size_by_loss_usd)
 
     max_lev = mode_limit.max_leverage
     if max_lev <= 1.0:
@@ -45,16 +48,23 @@ def build_risk_envelope(
             max_lev,
             1.0 + (input_data.decision.confidence * (max_lev - 1.0)),
         )
+    if input_data.reduce_only and proposed_leverage <= 0.0:
+        proposed_leverage = 1.0
 
     risk_limits_passed = True
 
-    if input_data.state_mode == StateMode.HALT:
+    if not input_data.reduce_only and input_data.state_mode == StateMode.HALT:
         risk_limits_passed = False
-    if mode_limit.max_positions <= 0:
+    if not input_data.reduce_only and mode_limit.max_positions <= 0:
         risk_limits_passed = False
-    if input_data.open_positions >= mode_limit.max_positions:
+    if not input_data.reduce_only and input_data.open_positions >= mode_limit.max_positions:
         risk_limits_passed = False
-    if input_data.daily_loss_pct >= constitution.daily_loss_limit_pct:
+    if input_data.reduce_only and input_data.open_positions <= 0:
+        risk_limits_passed = False
+    if (
+        not input_data.reduce_only
+        and input_data.daily_loss_pct >= constitution.daily_loss_limit_pct
+    ):
         risk_limits_passed = False
     if proposed_size_usd <= 0.0 or proposed_leverage <= 0.0:
         risk_limits_passed = False
@@ -71,6 +81,7 @@ def build_risk_envelope(
         liquidity_gate_passed=input_data.liquidity_gate_passed,
         ntz_blocked=ntz_blocked,
         risk_limits_passed=risk_limits_passed,
+        reduce_only=input_data.reduce_only,
     )
 
     return RiskEnvelopeResult(

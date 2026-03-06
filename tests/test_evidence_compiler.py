@@ -1,3 +1,4 @@
+import time
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -11,7 +12,12 @@ from ats_contracts.models import (
     MarketDataSnapshot,
     TradeTick,
 )
-from ats_evidence_swarm.experts import assert_advisory_only, compile_evidence_packet
+from ats_evidence_swarm.experts import (
+    ExpertSignal,
+    assert_advisory_only,
+    compile_evidence_packet,
+    run_expert_with_fallback,
+)
 
 
 def _data_layer_result() -> DataLayerResult:
@@ -130,3 +136,29 @@ def test_compile_evidence_packet_outputs_all_experts() -> None:
 def test_advisory_guard_rejects_trading_authority_tokens() -> None:
     with pytest.raises(ValueError, match="forbidden feature token"):
         assert_advisory_only({"position_action_hint": 1.0}, [])
+
+
+def test_expert_timeout_returns_neutral_fallback() -> None:
+    snapshot = _data_layer_result().market_snapshot
+
+    def _slow_expert(_snapshot: MarketDataSnapshot) -> ExpertSignal:
+        time.sleep(0.05)
+        return ExpertSignal(
+            name="slow_expert",
+            direction_score=0.4,
+            confidence=0.9,
+            features={"foo": 1.0},
+            risk_flags=[],
+            reliability=0.9,
+        )
+
+    signal = run_expert_with_fallback(
+        name="slow_expert",
+        fn=_slow_expert,
+        snapshot=snapshot,
+        timeout_seconds=0.001,
+    )
+
+    assert signal.direction_score == 0.0
+    assert signal.confidence == 0.0
+    assert "SLOW_EXPERT_TIMEOUT_FALLBACK" in signal.risk_flags

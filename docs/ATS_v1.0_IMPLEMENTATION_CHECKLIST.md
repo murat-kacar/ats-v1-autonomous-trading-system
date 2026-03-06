@@ -16,7 +16,7 @@ Goal:
 - Build deterministic control plane before any strategy logic.
 
 ### 0.1 Repository and project skeleton
-- [ ] Create monorepo layout:
+- [x] Create monorepo layout:
   - `apps/orchestrator`
   - `services/evidence-swarm`
   - `services/decision-core`
@@ -26,26 +26,26 @@ Goal:
   - `libs/contracts`
   - `libs/risk-rules`
   - `libs/event-log`
-- [ ] Create shared config system (`env`, schema validation, immutable runtime snapshot).
-- [ ] Add static analysis + formatting + unit test runner.
+- [x] Create shared config system (`env`, schema validation, immutable runtime snapshot).
+- [x] Add static analysis + formatting + unit test runner.
 
 ### 0.2 Canonical contracts and reason codes
-- [ ] Define strict message schemas:
+- [x] Define strict message schemas:
   - `EvidencePacket`
   - `DecisionProposal`
   - `RiskDecision`
   - `ExecutionIntent`
   - `ExecutionReport`
-- [ ] Define mandatory `reason_codes` enum (deny, throttle, halt, no-trade).
-- [ ] Add schema compatibility tests across all services.
+- [x] Define mandatory `reason_codes` enum (deny, throttle, halt, no-trade).
+- [x] Add schema compatibility tests across all services.
 
 ### 0.3 Constitution and state machine engine
-- [ ] Implement immutable constitution loader (read-only at runtime).
-- [ ] Implement deterministic mode transitions: NORMAL/CAUTION/DEFENSE/HALT.
-- [ ] Implement cooldown semantics on mode exit:
+- [x] Implement immutable constitution loader (read-only at runtime).
+- [x] Implement deterministic mode transitions: NORMAL/CAUTION/DEFENSE/HALT.
+- [x] Implement cooldown semantics on mode exit:
   - DEFENSE exit -> 6h no new positions
   - HALT exit -> 24h shadow-only
-- [ ] Add precedence engine:
+- [x] Add precedence engine:
   1. Constitution breach
   2. Circuit breaker
   3. Liquidity gate
@@ -69,10 +69,10 @@ Goal:
 - [x] Implement startup health checks and stale-data kill condition.
 
 Exit criteria (Phase 0):
-- [ ] All schemas versioned and tested
+- [x] All schemas versioned and tested
 - [x] State transitions 100% deterministic in tests
 - [x] Replay test passes for at least 1,000 synthetic events
-- [ ] No order route available unless constitution/risk passes
+- [x] No order route available unless constitution/risk passes
 
 ---
 
@@ -94,7 +94,7 @@ Goal:
 - [x] Map anomalies to uncertainty_score contribution (no hard block by default).
 
 ### 1.2 Evidence swarm (advisory only)
-- [ ] Define expert taxonomy for v1.0 advisory swarm:
+- [x] Define expert taxonomy for v1.0 advisory swarm:
   - market microstructure
   - macro and cross-asset
   - funding/basis and derivatives structure
@@ -110,9 +110,9 @@ Goal:
   - funding/basis evidence
   - macro-correlation evidence
 - [x] Enforce no-trading-authority rule at interface level.
-- [ ] Enforce no-forecast-authority rule at interface level (agents provide stats/evidence only).
+- [x] Enforce no-forecast-authority rule at interface level (agents provide stats/evidence only).
 - [x] Standardize outputs to EvidencePacket schema.
-- [ ] Add per-agent reliability scoring and timeout-to-neutral fallback.
+- [x] Add per-agent reliability scoring and timeout-to-neutral fallback.
 
 ### 1.3 Evidence compiler
 - [x] Build reliability-weighted aggregation.
@@ -169,6 +169,9 @@ Exit criteria (Phase 1):
 - [ ] Positive risk-adjusted return after all costs
 - [ ] Zero constitution breaches in paper logs
 - [ ] All deny reasons explainable from logs without ambiguity
+
+Note:
+- Phase 1 engineering implementation is complete; exit criteria above are runtime-validation gates and remain pending until paper window is observed.
 
 ---
 

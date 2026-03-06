@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 from dataclasses import asdict
 from pathlib import Path
-from typing import cast
 
 from ats_contracts.models import (
     ReasonCode,
@@ -23,7 +22,7 @@ from ats_risk_rules.constitution import (
 from ats_risk_rules.rules import decide_risk_decision
 from ats_risk_rules.state_machine import evaluate_state_transition
 from ats_security import SecretManager, StartupHealthChecker
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 
 from .sizing import build_risk_envelope
 
@@ -39,6 +38,7 @@ STALE_MAX_SECONDS_ENV = "ATS_STALE_DATA_MAX_SECONDS"
 ENFORCE_STARTUP_HEALTH_ENV = "ATS_ENFORCE_STARTUP_HEALTH"
 ENFORCE_STALE_ON_STARTUP_ENV = "ATS_ENFORCE_STALE_DATA_ON_STARTUP"
 ENFORCE_STALE_ON_REQUEST_ENV = "ATS_ENFORCE_STALE_DATA_ON_REQUEST"
+ENABLE_DIRECT_ADJUDICATE_ENV = "ATS_ENABLE_DIRECT_RISK_ADJUDICATE"
 
 
 def _parse_bool_env(name: str, default: bool) -> bool:
@@ -164,6 +164,12 @@ def _enforce_stale_guard(
 
 @app.post("/v1/risk/adjudicate", response_model=RiskDecision)
 def adjudicate(input_data: RiskEvaluationInput) -> RiskDecision:
+    if not _parse_bool_env(ENABLE_DIRECT_ADJUDICATE_ENV, False):
+        raise HTTPException(
+            status_code=403,
+            detail="Direct adjudication is disabled. Use /v1/risk/evaluate.",
+        )
+
     request_payload = input_data.model_dump(mode="json")
     request_event = event_logger.append("risk_adjudicator.requested", request_payload)
 
@@ -175,7 +181,7 @@ def adjudicate(input_data: RiskEvaluationInput) -> RiskDecision:
     if stale_result is not None:
         return stale_result
 
-    result = cast(RiskDecision, decide_risk_decision(input_data))
+    result = decide_risk_decision(input_data, guard_precedence=constitution.guard_precedence)
 
     event_logger.append(
         "risk_adjudicator.completed",
@@ -204,7 +210,10 @@ def evaluate_risk(input_data: RiskEnvelopeInput) -> RiskDecision:
         return stale_result
 
     envelope = build_risk_envelope(input_data, constitution)
-    result = cast(RiskDecision, decide_risk_decision(envelope.evaluation_input))
+    result = decide_risk_decision(
+        envelope.evaluation_input,
+        guard_precedence=constitution.guard_precedence,
+    )
 
     event_logger.append(
         "risk_adjudicator.envelope.completed",
@@ -227,7 +236,7 @@ def evaluate_state(input_data: StateEvaluationInput) -> StateEvaluationResult:
     request_payload = input_data.model_dump(mode="json")
     request_event = event_logger.append("risk_adjudicator.state.requested", request_payload)
 
-    result = cast(StateEvaluationResult, evaluate_state_transition(input_data, constitution))
+    result = evaluate_state_transition(input_data, constitution)
 
     event_logger.append(
         "risk_adjudicator.state.completed",

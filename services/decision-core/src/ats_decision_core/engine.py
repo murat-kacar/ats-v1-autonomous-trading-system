@@ -48,6 +48,10 @@ def select_horizon_window(input_data: DecisionCoreInput) -> HorizonSelection | N
             continue
         if candidate.walk_forward_score <= 0.0:
             continue
+        if candidate.calibration_coverage < input_data.min_calibration_coverage:
+            continue
+        if candidate.brier_ratio > input_data.max_brier_ratio:
+            continue
 
         edge_after_cost = _post_cost_edge_bps(candidate)
         if edge_after_cost <= 0.0:

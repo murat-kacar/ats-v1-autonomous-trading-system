@@ -9,6 +9,7 @@ from ats_contracts.models import (
     DepthSnapshot,
     FundingSnapshot,
     HorizonWindowCandidate,
+    LiquidityGateInput,
     MarketDataSnapshot,
     ReasonCode,
     TradeTick,
@@ -132,11 +133,11 @@ async def test_run_paper_cycle_allow_path() -> None:
             )
         ],
         execution=PaperExecutionConfig(
-            liquidity={
-                "spread_bps": 4.0,
-                "depth_1pct_usd": 100_000.0,
-                "expected_impact_bps": 5.0,
-            }
+            liquidity=LiquidityGateInput(
+                spread_bps=4.0,
+                depth_1pct_usd=100_000.0,
+                expected_impact_bps=5.0,
+            ),
         ),
     )
 

@@ -143,53 +143,6 @@ def _derived_liquidity(snapshot: DataLayerResult) -> LiquidityGateInput:
     )
 
 
-def _auto_candidates(evidence: EvidencePacket) -> list[HorizonWindowCandidate]:
-    momentum = abs(evidence.feature_values.get("trend_momentum", 0.0))
-    volatility = abs(evidence.feature_values.get("volatility_realized_vol", 0.0))
-
-    base_edge = max(1.8, 4.0 + (momentum * 6_000.0) - (volatility * 4_500.0))
-    wf = _clamp(0.8 + (momentum * 180.0), 0.4, 1.6)
-
-    return [
-        HorizonWindowCandidate(
-            horizon="5m",
-            window_days=30,
-            sample_size=180,
-            walk_forward_score=wf * 0.85,
-            embargo_passed=True,
-            gross_edge_bps=base_edge * 0.85,
-            fee_bps=2.0,
-            slippage_bps=1.2,
-            funding_bps=0.4,
-            impact_bps=0.9,
-        ),
-        HorizonWindowCandidate(
-            horizon="15m",
-            window_days=60,
-            sample_size=240,
-            walk_forward_score=wf,
-            embargo_passed=True,
-            gross_edge_bps=base_edge,
-            fee_bps=1.8,
-            slippage_bps=1.0,
-            funding_bps=0.4,
-            impact_bps=0.8,
-        ),
-        HorizonWindowCandidate(
-            horizon="1h",
-            window_days=120,
-            sample_size=300,
-            walk_forward_score=wf * 0.9,
-            embargo_passed=True,
-            gross_edge_bps=base_edge * 1.05,
-            fee_bps=1.8,
-            slippage_bps=1.1,
-            funding_bps=0.5,
-            impact_bps=1.0,
-        ),
-    ]
-
-
 def _derive_side(decision: DecisionProposal) -> str | None:
     top = max(decision.p_up, decision.p_down, decision.p_flat)
     if top == decision.p_flat:
@@ -265,7 +218,7 @@ async def run_paper_cycle(
         data_layer=data_layer,
     )
 
-    candidates = input_data.decision_candidates or _auto_candidates(evidence)
+    candidates = input_data.decision_candidates
 
     decision = build_decision_proposal(
         DecisionCoreInput(
@@ -295,6 +248,11 @@ async def run_paper_cycle(
     if ntz_funding is None:
         ntz_funding = "FUNDING_EXTREME" in evidence.risk_flags
 
+    mode = input_data.execution.mode or input_data.risk.state_mode
+    reduce_only = input_data.execution.reduce_only
+    if reduce_only is None:
+        reduce_only = mode in {StateMode.DEFENSE, StateMode.HALT}
+
     envelope = build_risk_envelope(
         RiskEnvelopeInput(
             request_id=input_data.request_id,
@@ -313,11 +271,15 @@ async def run_paper_cycle(
             ntz_correlation_abnormal=ntz_correlation,
             ntz_funding_extreme=ntz_funding,
             constitution_breach=input_data.risk.constitution_breach,
+            reduce_only=reduce_only,
         ),
         constitution,
     )
 
-    risk_decision = decide_risk_decision(envelope.evaluation_input)
+    risk_decision = decide_risk_decision(
+        envelope.evaluation_input,
+        guard_precedence=constitution.guard_precedence,
+    )
 
     side = _derive_side(decision)
     execution_result: ExecutionSimulationResult
@@ -330,16 +292,11 @@ async def run_paper_cycle(
     elif side is None:
         execution_result = _to_execution_denied(
             request_id=input_data.request_id,
-            reason=ReasonCode.NO_HORIZON_PASSED,
+            reason=ReasonCode.NO_DIRECTION_SIGNAL,
         )
     else:
         reference_price = input_data.execution.reference_price or _mid_price(data_layer)
         qty = max(1e-9, risk_decision.size_usd / reference_price)
-
-        mode = input_data.execution.mode or input_data.risk.state_mode
-        reduce_only = input_data.execution.reduce_only
-        if reduce_only is None:
-            reduce_only = mode in {StateMode.DEFENSE, StateMode.HALT}
 
         liquidity = input_data.execution.liquidity or _derived_liquidity(data_layer)
 
