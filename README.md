@@ -61,3 +61,16 @@ This repository is the bootstrap monorepo for ATS v1.0.
 - Use versioned changes only.
 - Keep execution-critical logic deterministic.
 - Do not bypass constitution/risk layers.
+
+
+## Phase 1.1 Walkforward Utility
+
+```bash
+# 5-year historical replay + online Mode A/B updates (test + learn)
+~/.local/bin/uv run --all-packages python tools/run_walkforward_5y.py \
+  --symbol BTCUSDT \
+  --interval 1h \
+  --years 5 \
+  --warmup-bars 240 \
+  --output /home/deploy/ats/artifacts/reports/walkforward_5y_summary.json
+```
